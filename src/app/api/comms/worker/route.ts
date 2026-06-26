@@ -11,11 +11,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_ATTEMPTS = 5;
 
-/** In prod, set CRON_SECRET and pass it as ?secret= or x-cron-secret. Local: open. */
+/** In prod, set CRON_SECRET. Accepts Vercel Cron's `Authorization: Bearer <secret>`
+ *  header, or `?secret=` / `x-cron-secret`. Local (no secret set): open. */
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return true;
-  return req.nextUrl.searchParams.get("secret") === secret || req.headers.get("x-cron-secret") === secret;
+  return (
+    req.headers.get("authorization") === `Bearer ${secret}` ||
+    req.headers.get("x-cron-secret") === secret ||
+    req.nextUrl.searchParams.get("secret") === secret
+  );
 }
 
 export async function GET(req: NextRequest) {

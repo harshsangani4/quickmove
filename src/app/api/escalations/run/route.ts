@@ -13,7 +13,11 @@ const CRITICAL_CATEGORIES = ["apartment", "movers", "utility"];
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return true;
-  return req.nextUrl.searchParams.get("secret") === secret || req.headers.get("x-cron-secret") === secret;
+  return (
+    req.headers.get("authorization") === `Bearer ${secret}` ||
+    req.headers.get("x-cron-secret") === secret ||
+    req.nextUrl.searchParams.get("secret") === secret
+  );
 }
 
 export async function GET(req: NextRequest) {
