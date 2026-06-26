@@ -10,7 +10,7 @@ export function PortalNav({ token, cityName }: { token: string; cityName: string
   const base = `/portal/${token}`;
   const items = [
     { href: base, label: "Home", icon: Home },
-    { href: `${base}/home`, label: "Your home", icon: KeyRound },
+    { href: `${base}/home`, label: "Apartment", icon: KeyRound },
     { href: `${base}/documents`, label: "Documents", icon: FileText },
     { href: `${base}/messages`, label: "Messages", icon: MessageSquare },
     { href: `${base}/costs`, label: "Costs", icon: Wallet },

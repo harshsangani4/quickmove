@@ -62,7 +62,9 @@ export default async function PortalHome({ params }: { params: Promise<{ token: 
     (new Date(summary.move_date).getTime() - Date.now()) / 86_400_000,
   );
   const delivered = summary.stage === "done" || summary.status === "completed" || moveDay.current >= 5;
-  const showMoveDay = daysToMove <= 1 || moveDay.current > 0;
+  // Show the live move-day strip only around the move window or while in progress —
+  // not for moves that were delivered long ago.
+  const showMoveDay = (daysToMove >= -1 && daysToMove <= 1) || (moveDay.current > 0 && moveDay.current < 5);
 
   return (
     <div className="space-y-10">

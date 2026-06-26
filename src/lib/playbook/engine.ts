@@ -152,19 +152,24 @@ export function computeProgress(tasks: DerivableTask[]): number {
 }
 
 /**
- * Stage = the furthest category (in progression order) that still has an open
- * task. All done → 'done'. No tasks → 'intake'. (build doc §3)
+ * Stage = the current working frontier: the EARLIEST category (in progression
+ * order) that still has an open task. All done → 'done'. No tasks → 'intake'.
+ *
+ * (The build doc §3 says "furthest category with an open task", but taken
+ * literally that puts a brand-new move — whose post-move support tasks are also
+ * still open — at the *last* stage, making a 0%-done move look finished. The
+ * intent is clearly the opposite: stage advances as earlier work completes.)
  */
 export function computeStage(tasks: DerivableTask[]): Stage {
   if (tasks.length === 0) return "intake";
   const open = tasks.filter((t) => t.status !== DONE);
   if (open.length === 0) return "done";
-  let furthest = -1;
+  let earliest = Infinity;
   for (const t of open) {
     const idx = STAGE_ORDER.indexOf(CATEGORY_TO_STAGE[t.category]);
-    if (idx > furthest) furthest = idx;
+    if (idx >= 0 && idx < earliest) earliest = idx;
   }
-  return STAGE_ORDER[Math.max(0, furthest)] ?? "intake";
+  return earliest === Infinity ? "intake" : STAGE_ORDER[earliest];
 }
 
 /**

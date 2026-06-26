@@ -61,14 +61,19 @@ export async function approveApartment(token: string, apartmentId: string): Prom
 }
 
 const rejectSchema = z.object({ note: z.string().trim().max(500).optional() });
-export async function rejectApartment(token: string, apartmentId: string, note?: string): Promise<ActionResult> {
+/** "Ask for other options" — rejects the whole current shortlist and pings ops. */
+export async function rejectApartment(token: string, _apartmentId: string, note?: string): Promise<ActionResult> {
   const ctx = await authorize(token);
   if (!ctx.ok) return ctx;
   const parsed = rejectSchema.safeParse({ note });
   const { db, relocationId } = ctx;
-  await db.from("apartments").update({ status: "rejected", customer_note: parsed.success ? parsed.data.note ?? null : null }).eq("id", apartmentId).eq("relocation_id", relocationId);
+  await db
+    .from("apartments")
+    .update({ status: "rejected", customer_note: parsed.success ? parsed.data.note ?? null : null })
+    .eq("relocation_id", relocationId)
+    .eq("status", "shortlisted");
   await db.from("messages").insert({ relocation_id: relocationId, sender: "system", channel: "app", body: `Customer requested other options${note ? `: ${note}` : ""}.` });
-  await logCustomer(db, relocationId, "apartment.decided", "apartment", { decision: "rejected" });
+  await logCustomer(db, relocationId, "apartment.decided", "apartment", { decision: "more_options" });
   revalidatePortal(token);
   return { ok: true };
 }

@@ -69,11 +69,11 @@ export function ApartmentDecision({ token, apartments }: { token: string; apartm
                 <div className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-success-muted px-3 py-1.5 text-sm font-medium text-success">
                   <Check className="size-4" /> You approved this home
                 </div>
-              ) : isRejected ? (
+              ) : isRejected || decided ? (
                 <div className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                   <X className="size-4" /> Not chosen
                 </div>
-              ) : !decided ? (
+              ) : (
                 <div className="mt-4 flex gap-2">
                   <Button className="flex-1" disabled={pending} onClick={() => approve(a.id)}>
                     {pending && <Loader2 className="size-4 animate-spin" />} Approve this home
@@ -82,7 +82,7 @@ export function ApartmentDecision({ token, apartments }: { token: string; apartm
                     Ask for other options
                   </Button>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
         );
