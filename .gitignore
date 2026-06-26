@@ -30,8 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — never upload any env file to GitHub
 .env*
+
+# supabase folder (local config, migrations, seed) — kept out of GitHub per request
+/supabase/
 
 # vercel
 .vercel
@@ -39,3 +42,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# docs not for GitHub: all Markdown except README.md, plus Word/PDF artifacts
+*.md
+!README.md
+*.docx
+*.pdf
+*.excalidraw
