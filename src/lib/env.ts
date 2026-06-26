@@ -7,7 +7,7 @@
 export const publicEnv = {
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
-  appBaseUrl: process.env.NEXT_PUBLIC_APP_BASE_URL ?? "http://localhost:3000",
+  appBaseUrl: process.env.NEXT_PUBLIC_APP_BASE_URL ?? "https://quickmove-ai-ops.vercel.app",
 };
 
 /**
@@ -34,6 +34,6 @@ export const serverEnv = {
     return process.env.MAGIC_LINK_SECRET ?? "dev-only-change-me";
   },
   get appBaseUrl() {
-    return process.env.APP_BASE_URL ?? "http://localhost:3000";
+    return process.env.APP_BASE_URL ?? "https://quickmove-ai-ops.vercel.app";
   },
 };

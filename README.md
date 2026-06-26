@@ -51,7 +51,7 @@ cp .env.example .env.local
 npm run seed
 
 # 5. Run the app
-npm run dev               # http://localhost:3000
+npm run dev               # serves locally; live app: https://quickmove-ai-ops.vercel.app
 ```
 
 ### Useful scripts
