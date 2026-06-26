@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { verifyToken } from "@/lib/portal/token";
+import { verifyToken, hashToken } from "@/lib/portal/token";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isAIEnabled, extractAndValidateDocument } from "@/lib/ai/provider";
 import type { ActionResult } from "./_helpers";
@@ -189,6 +189,40 @@ export async function raiseIssue(token: string, body: string): Promise<ActionRes
   await db.from("messages").insert({ relocation_id: relocationId, sender: "customer", channel: "app", body: `Raised an issue: ${parsed.data.body}` });
   await logCustomer(db, relocationId, "issue.raised", "support", { body: parsed.data.body.slice(0, 120) });
   revalidatePortal(token);
+  return { ok: true };
+}
+
+/**
+ * A customer on an expired/revoked link asks for a fresh one. We look up the
+ * (hashed) token even though it's invalid, and notify ops via a system message +
+ * a queued notification — ops then generates a new link from Mission Control.
+ * Always returns ok (don't leak whether a token exists).
+ */
+export async function requestNewLink(token: string): Promise<ActionResult> {
+  const db = createAdminClient();
+  const { data } = await db
+    .from("magic_links")
+    .select("relocation_id")
+    .eq("token", hashToken(token))
+    .maybeSingle();
+  if (data?.relocation_id) {
+    await db.from("messages").insert({
+      relocation_id: data.relocation_id,
+      sender: "system",
+      channel: "app",
+      body: "Customer requested a new access link.",
+    });
+    await db.from("comms_queue").insert({
+      relocation_id: data.relocation_id,
+      channel: "email",
+      template_key: "new_link_request",
+      payload: { text: "Customer requested a new portal link." },
+      status: "queued",
+      attempts: 0,
+      next_attempt_at: new Date().toISOString(),
+    });
+    await logCustomer(db, data.relocation_id, "magic_link.requested", "magic_link");
+  }
   return { ok: true };
 }
 

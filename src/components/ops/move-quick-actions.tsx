@@ -12,6 +12,10 @@ import {
   RotateCcw,
   Loader2,
   ArrowRight,
+  Link2,
+  Copy,
+  ShieldOff,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +39,7 @@ import {
   sendOpsMessage,
   type ReflowChange,
 } from "@/lib/actions/moves";
+import { generateMagicLink, revokeMagicLinks } from "@/lib/actions/links";
 
 export function MoveQuickActions({
   relocationId,
@@ -54,6 +59,7 @@ export function MoveQuickActions({
   const [openMsg, setOpenMsg] = useState(false);
   const [openReflow, setOpenReflow] = useState(false);
   const [openCancel, setOpenCancel] = useState(false);
+  const [openLink, setOpenLink] = useState(false);
 
   const closed = status === "cancelled" || status === "completed";
 
@@ -100,6 +106,9 @@ export function MoveQuickActions({
         <Button variant="outline" size="sm" onClick={() => setOpenMsg(true)}>
           <MessageSquare className="size-4" /> Message
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setOpenLink(true)}>
+          <Link2 className="size-4" /> Magic link
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setOpenReflow(true)} disabled={closed}>
           <CalendarClock className="size-4" /> Reflow
         </Button>
@@ -142,7 +151,116 @@ export function MoveQuickActions({
         onClose={() => setOpenCancel(false)}
         relocationId={relocationId}
       />
+      <MagicLinkDialog
+        open={openLink}
+        onClose={() => setOpenLink(false)}
+        relocationId={relocationId}
+        customerName={customerName}
+      />
     </>
+  );
+}
+
+function MagicLinkDialog({
+  open,
+  onClose,
+  relocationId,
+  customerName,
+}: {
+  open: boolean;
+  onClose: () => void;
+  relocationId: string;
+  customerName: string;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [pending, start] = useTransition();
+  const [revoking, startRevoke] = useTransition();
+
+  function generate() {
+    start(async () => {
+      const res = await generateMagicLink(relocationId);
+      if (!res.ok) {
+        toast.error("Couldn't create link", { description: res.error });
+        return;
+      }
+      setUrl(res.data!.url);
+      setCopied(false);
+    });
+  }
+
+  function copy() {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success("Link copied");
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) {
+          onClose();
+          setUrl(null);
+          setCopied(false);
+        }
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Customer portal link</DialogTitle>
+          <DialogDescription>
+            Generate a private, expiring link for {customerName} to track their move — then
+            send it over WhatsApp or email. Links are valid for 30 days.
+          </DialogDescription>
+        </DialogHeader>
+
+        {url ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-2">
+              <input readOnly value={url} className="min-w-0 flex-1 bg-transparent px-1 text-xs outline-none" />
+              <Button size="sm" variant="outline" onClick={copy}>
+                {copied ? <CheckCircle2 className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Keep this private — anyone with the link can view this move.
+            </p>
+          </div>
+        ) : (
+          <Button onClick={generate} disabled={pending}>
+            {pending && <Loader2 className="size-4 animate-spin" />}
+            <Link2 className="size-4" /> Generate link
+          </Button>
+        )}
+
+        <DialogFooter className="sm:justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-danger hover:text-danger"
+            disabled={revoking}
+            onClick={() =>
+              startRevoke(async () => {
+                const res = await revokeMagicLinks(relocationId);
+                if (!res.ok) {
+                  toast.error("Couldn't revoke", { description: res.error });
+                  return;
+                }
+                toast.success(`Revoked ${res.data?.revoked ?? 0} link(s)`);
+                setUrl(null);
+              })
+            }
+          >
+            {revoking ? <Loader2 className="size-4 animate-spin" /> : <ShieldOff className="size-4" />}
+            Revoke all links
+          </Button>
+          <Button variant="outline" size="sm" onClick={onClose}>Done</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

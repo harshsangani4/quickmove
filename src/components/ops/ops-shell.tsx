@@ -13,6 +13,7 @@ import {
   Truck,
   Sparkles,
   MailWarning,
+  Users,
   LogOut,
 } from "lucide-react";
 import {
@@ -22,13 +23,22 @@ import {
 import { Button } from "@/components/ui/button";
 import type { User } from "@/lib/types";
 
-const NAV = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
+  strictAdmin?: boolean;
+}
+
+const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
   { href: "/cities", label: "City Playbooks", icon: Building2, adminOnly: true },
   { href: "/vendors", label: "Vendors", icon: Truck },
   { href: "/copilot", label: "Copilot", icon: Sparkles },
   { href: "/delivery", label: "Delivery issues", icon: MailWarning, adminOnly: true },
+  { href: "/users", label: "Team", icon: Users, strictAdmin: true },
 ];
 
 function initials(name: string) {
@@ -73,7 +83,11 @@ export function OpsShell({
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-2">
-          {NAV.filter((n) => !n.adminOnly || isAdmin).map((item) => {
+          {NAV.filter((n) => {
+            if (n.strictAdmin) return user.role === "admin";
+            if (n.adminOnly) return isAdmin;
+            return true;
+          }).map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;

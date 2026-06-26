@@ -12,10 +12,10 @@ export default async function PortalLayout({
 }) {
   const { token } = await params;
   const result = await verifyToken(token);
-  if (!result.ok) return <PortalExpired reason={result.reason} />;
+  if (!result.ok) return <PortalExpired reason={result.reason} token={token} />;
 
   const summary = await getPortalSummary(result.relocationId);
-  if (!summary) return <PortalExpired reason="not_found" />;
+  if (!summary) return <PortalExpired reason="not_found" token={token} />;
 
   return (
     <div className="min-h-dvh bg-gradient-to-b from-background to-brand-muted/10">
